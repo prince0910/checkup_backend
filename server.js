@@ -26,14 +26,23 @@ app.use(session({
  
 app.use(flash());
  
+ /////////test
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173"); // update to match the domain you will make the request from
   res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
+app.get('/',function(req,res,next){
+  var sql = `SELECT * FROM Employee`
+  db.query(sql, function(err, result){
+    if (err) throw err;
+    var json = JSON.stringify(result)
+    res.end(json);
+  })
+});
 /////////////// Employee
-app.get('/Employee',function(req,res,next){
+app.get('/employee',function(req,res,next){
   var sql = `SELECT * FROM Employee`
   db.query(sql, function(err, result){
     if (err) throw err;
@@ -601,7 +610,7 @@ app.post('/privilege', function(req, res, next) {
       // response jason ไปยังหน้าบ้าน
       
     });
-});p
+});
 app.put('/privilege', function(req, res, next) {
   var Role_ID = req.body.Role_ID 
   var Role_name = req.body.Role_name
@@ -644,7 +653,87 @@ app.delete('/privilege', function(req, res,next) {
     });
   });
 });
+//////////////////// PagePrivilege
+app.get('/pageprivilege',function(req,res,next){
+  var sql = `SELECT * FROM PagePrivilege`
+  db.query(sql, function(err, result){
+    if (err) throw err;
+    var json = JSON.stringify(result)
+    res.end(json);
+  })
+});
+//////
+app.post('/pageprivilege', function(req, res, next) {
+  var PP_ID = req.body.PP_ID 
+  var Role_ID = req.body.Role_ID 
+  var Page_ID = req.body.Page_ID 
+   // คำสั่ง sql ในการยัดข้อมูลลง database
+    var sql = `INSERT INTO PagePrivilege (
+      PP_ID,
+      Role_ID,
+      Page_ID) VALUES (
+      "${PP_ID}",
+      "${Role_ID}",
+      "${Page_ID}"
+    )`;
+    // excute คำสั่ง
+    db.query(sql, function(err, result) {
+      if (err) {
+        res.json({ 
+          message:err
+        });
+      }else{
+        res.json({ 
+          message:'ok'
+        });
+      }
+      // response jason ไปยังหน้าบ้าน
+      
+    });
+});
+////
+app.put('/pageprivilege', function(req, res, next) {
+  var PP_ID = req.body.PP_ID 
+  var Role_ID = req.body.Role_ID
+  var Page_ID = req.body.Page_ID
+  /////////
+  var sql = `UPDATE PagePrivilege 
+  SET Role_ID = "${Role_ID}",
+  Page_ID = "${Page_ID}",
+  WHERE PP_ID = "${PP_ID}"; `
+  console.log(sql)
+  // excute คำสั่ง
+  db.query(sql, function(err, result) {
+    if (err) {
+      res.json({ 
+        message:err
+      });
+    }else{
+      res.json({ 
+        message:'ok'
+      });
+    }
+    // response jason ไปยังหน้าบ้าน
+  });
 
+});
+///
+app.delete('/pageprivilege', function(req, res,next) {
+  var PP_ID = req.body.PP_ID 
+
+  // คำสั่ง sqlในการลบข้อมูลในdatabase////////////////////////////
+  var sql = `DELETE FROM PagePrivilege 
+  WHERE PP_ID = "${PP_ID}"`
+
+//
+  db.query(sql, function(err, result) {
+    if (err) throw err;
+    // response jason ไปยังหน้าบ้าน
+    res.json({ 
+      message:'ok'
+    });
+  });
+});
 
 
 
