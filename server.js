@@ -477,8 +477,7 @@ app.put('/leaves', function(req, res, next) {
       
     });
 });
-//h
-fh
+//
 app.delete('/leaves', function(req, res,next) {
   var Leave_Num = req.body.Leave_Num 
 
