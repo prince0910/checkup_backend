@@ -25,7 +25,7 @@ app.use(session({
 
  
 app.use(flash());
- /////////test
+/////////test
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173"); // update to match the domain you will make the request from
   res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
@@ -477,7 +477,8 @@ app.put('/leaves', function(req, res, next) {
       
     });
 });
-//
+//h
+fh
 app.delete('/leaves', function(req, res,next) {
   var Leave_Num = req.body.Leave_Num 
 
