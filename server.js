@@ -392,6 +392,8 @@ app.post('/leaves', function(req, res, next) {
   var Leave_Inform = req.body.Leave_Inform
   var Leave_day = req.body.Leave_day
   var Leave_dayend = req.body.Leave_dayend
+  var Leave_type = req.body.Leave_type
+  var Leave_timetype = req.body.Leave_timetype
   var Leave_Send = req.body.Leave_Send
   var Approve_Date = req.body.Approve_Date
   var Leave_Status = req.body.Leave_Status
