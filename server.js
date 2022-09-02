@@ -51,7 +51,7 @@ app.get('/employee',function(req,res,next){
 });
 
 app.post('/employee', function(req, res, next) {
-var Emp_ID = req.body.Emp_ID // genEmpID()
+var Emp_ID = req.body.Emp_ID // 
 var token = req.body.token
 var pwd = req.body.pwd
 var Emp_sick = req.body.Emp_sick
@@ -61,7 +61,7 @@ var Emp_religion = req.body.Emp_religion
 var Emp_Pic = req.body.Emp_Pic
 var Emp_Phone = req.body.Emp_Phone
 var Emp_nationality = req.body.Emp_nationality
-var Emp_Name = req.body.Emp_Name
+var Emp_Name = req.body.Emp_Name ///edi
 var Emp_Mail = req.body.Emp_Mail
 var Emp_IssueDate = req.body.Emp_IssueDate
 var Emp_Identity_ID = req.body.Emp_Identity_ID
@@ -71,7 +71,7 @@ var Emp_Age = req.body.Emp_Age
 var Emp_Addressnow = req.body.Emp_Addressnow
 var Emp_Address = req.body.Emp_Address
 
-  
+//pwd =0
  // คำสั่ง sql ในการยัดข้อมูลลง database
   var sql = `INSERT INTO Employee (
     Emp_ID,
@@ -404,6 +404,8 @@ app.post('/leaves', function(req, res, next) {
       Leave_Inform,
       Leave_day,
       Leave_dayend,
+      Leave_type,
+      Leave_timetype,
       Leave_Send,
       Approve_Date,
       Leave_Status,
@@ -412,7 +414,9 @@ app.post('/leaves', function(req, res, next) {
       "${Leave_Num}",
       "${Leave_Inform}",
       "${Leave_day}",
-      "${Leave_dayend}", 
+      "${Leave_dayend}",
+      "${Leave_type}", 
+      "${Leave_timetype}",  
       "${Leave_Send}", 
       "${Approve_Date}",
       "${Leave_Status}",
@@ -504,7 +508,7 @@ app.get('/page',function(req,res,next){
     res.end(json);
   })
 });
-////
+////่่่่่
 app.post('/page', function(req, res, next) {
   var Page_ID = req.body.Page_ID 
   var Page_name = req.body.Page_name 
@@ -733,6 +737,14 @@ app.delete('/pageprivilege', function(req, res,next) {
     });
   });
 });
+
+
+
+
+
+
+
+
 
 
 
