@@ -9,7 +9,9 @@ var session = require('express-session');
 var db=require('./config');
 var app = express();
 var cors = require('cors');
-
+const crypto = require("crypto");
+const { token } = require('morgan');
+//////////
 app.use(cors())
 app.use(logger('dev'));
 app.use(express.json());
@@ -49,11 +51,67 @@ app.get('/employee',function(req,res,next){
     res.end(json);
   })
 });
+////////// function
+function hashPassword(password){
+  const salt = "some salt2";
+  const sha256Hasher = crypto.createHmac("sha256", salt);
+  const hash = sha256Hasher.update(password).digest("hex");
+  return hash
+}
+
+function genToken(){
+  var result = "-"
+  result = crypto.randomBytes(64).toString('hex');
+  return result
+}
+
+//app.get('/checkauthen', function(req, res, next){
+ // var pwd = req.body.pwd
+ // var 
+//});
+
+///////////// login
+app.put('/login',function(req, res, next){
+  var Emp_Mail = req.body.Emp_Mail
+  var pwd =  hashPassword(req.body.pwd)
+  var sql = `SELECT Emp_Mail, pwd FROM Employee 
+  where Emp_Mail= "${Emp_Mail}" AND pwd= "${pwd}"`
+  console.log(sql)
+  var row_number = 0
+  db.query(sql, function(err, result){
+    if (err) throw err;
+    // json = JSON.stringify(result)
+    row_number = result.length   
+    if(row_number == 1){
+      var token = genToken()
+      var sql2 = `UPDATE Employee SET token = "${token}" WHERE Emp_Mail = "${Emp_Mail}" AND pwd = "${pwd}"`
+      db.query(sql2, function(err, result){
+        if (err) {
+          res.json({ 
+            message:err
+          });
+        }else{
+          res.json({ 
+            message:'ok',
+            user_token:token
+          });
+        }
+      })
+    }else{
+      res.json({ 
+        message:'user or password is incorrect!!!',
+      });
+    }
+  })
+
+
+});
+
 
 app.post('/employee', function(req, res, next) {
 var Emp_ID = req.body.Emp_ID // 
-var token = req.body.token
-var pwd = req.body.pwd
+var token = genToken()
+var pwd = hashPassword(req.body.pwd)
 var Emp_sick = req.body.Emp_sick
 var Emp_Sex = req.body.Emp_Sex
 var Emp_Scanpic = req.body.Emp_Scanpic
@@ -71,6 +129,7 @@ var Emp_Age = req.body.Emp_Age
 var Emp_Addressnow = req.body.Emp_Addressnow
 var Emp_Address = req.body.Emp_Address
 
+// hash password
 //pwd =0
  // คำสั่ง sql ในการยัดข้อมูลลง database
   var sql = `INSERT INTO Employee (
@@ -113,8 +172,8 @@ var Emp_Address = req.body.Emp_Address
     "${Emp_Addressnow}", 
     "${Emp_Address}" 
   )`;
-  
-
+      
+      console.log('sql',sql);
   // excute คำสั่ง
   db.query(sql, function(err, result) {
     if (err) {
@@ -740,7 +799,7 @@ app.delete('/pageprivilege', function(req, res,next) {
   });
 });
 
-
+///////////////////register
 
 
 

@@ -31,34 +31,10 @@ console.log("\n แปลงค่าได้ : ", decryptData.toString())
 //     console.log(token)
 // });
 
-function makeid(length) {
-    var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * 
-    charactersLength));
-   }
-   
-   return result;
-}
 
 function log(){
     const username = 'nut'
     const password = '1234'
-
-    item = test.query('SELECT pwd FROM Employee WHERE userName = "pwd"', function (err,result){
-        if(err) throw err;
-        else if('user' == / something correct /){
-            console.log("TRUE");
-        }
-        console.log(result[0]);
-    });
- 
         
 
-
-
 }
-
-// console.log('makeid(5)',makeid(5).toString("base64"));
