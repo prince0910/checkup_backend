@@ -65,10 +65,26 @@ function genToken(){
   return result
 }
 
-//app.get('/checkauthen', function(req, res, next){
- // var pwd = req.body.pwd
- // var 
-//});
+app.get('/checkauthen', function(req, res, next){
+ var token = req.body.token
+ var Emp_ID = req.body.Emp_ID
+
+
+ var sql = `SELECT Emp_ID FROM Employee WHERE Emp_ID = ${Emp_ID} AND token =  "${token}" `
+ db.query(sql, function(err, result){
+    if (err) throw err;
+    row_number = result.length
+    if(row_number == 1){
+      res.json({ 
+        message:'ok',
+      });
+    }else{
+      res.json({ 
+        message:'invalid token !',
+      });
+    }
+  })
+});
 
 ///////////// login
 app.put('/login',function(req, res, next){
@@ -133,7 +149,6 @@ var Emp_Address = req.body.Emp_Address
 //pwd =0
  // คำสั่ง sql ในการยัดข้อมูลลง database
   var sql = `INSERT INTO Employee (
-    Emp_ID,
     token,
     pwd,
     Emp_sick, 
@@ -152,7 +167,6 @@ var Emp_Address = req.body.Emp_Address
     Emp_Age, 
     Emp_Addressnow, 
     Emp_Address) VALUES (
-    "${Emp_ID}",
     "${token}",
     "${pwd}", 
     "${Emp_sick}", 
