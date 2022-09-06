@@ -11,6 +11,9 @@ var app = express();
 var cors = require('cors');
 const crypto = require("crypto");
 const { token } = require('morgan');
+const conn = require('./config');
+
+
 //////////
 app.use(cors())
 app.use(logger('dev'));
@@ -24,9 +27,9 @@ app.use(session({
     saveUninitialized: true,
     cookie: { maxAge: 60000 }
 }))
-
- 
 app.use(flash());
+
+
 /////////test
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173"); // update to match the domain you will make the request from
@@ -34,12 +37,16 @@ app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
+
+
 app.get('/',function(req,res,next){
-  var sql = `SELECT * FROM Employee`
+  var sql = `SELECT Emp_ID FROM Employee WHERE Emp_Mail LIKE '443drdgfx@hitmail.com' AND pwd = '5eda9dae99e2aa981ed22246d0c0e6a36768c2d01fb41ab16338e05636b7fafb'`
+  console.log(sql)
   db.query(sql, function(err, result){
     if (err) throw err;
     var json = JSON.stringify(result)
     res.end(json);
+    
   })
 });
 /////////////// Employee
@@ -49,6 +56,7 @@ app.get('/employee',function(req,res,next){
     if (err) throw err;
     var json = JSON.stringify(result)
     res.end(json);
+    
   })
 });
 ////////// function
@@ -65,11 +73,11 @@ function genToken(){
   return result
 }
 
+
+
 app.get('/checkauthen', function(req, res, next){
  var token = req.body.token
  var Emp_ID = req.body.Emp_ID
-
-
  var sql = `SELECT Emp_ID FROM Employee WHERE Emp_ID = ${Emp_ID} AND token =  "${token}" `
  db.query(sql, function(err, result){
     if (err) throw err;
@@ -86,22 +94,33 @@ app.get('/checkauthen', function(req, res, next){
   })
 });
 
+
+
 ///////////// login
 app.put('/login',function(req, res, next){
   var Emp_Mail = req.body.Emp_Mail
   var pwd =  hashPassword(req.body.pwd)
-  var sql = `SELECT Emp_Mail, pwd FROM Employee 
-  where Emp_Mail= "${Emp_Mail}" AND pwd= "${pwd}"`
+  
+  var sql = `SELECT Emp_Mail, pwd  FROM Employee 
+   where Emp_Mail= "${Emp_Mail}" AND pwd= "${pwd}"`
   console.log(sql)
+  
   var row_number = 0
-  db.query(sql, function(err, result){
+  db.query(sql, function(err, result, field){
     if (err) throw err;
-    // json = JSON.stringify(result)
+    json = JSON.stringify(result)
     row_number = result.length   
+    //console.log()
     if(row_number == 1){
-      var token = genToken()
+      var token = genToken()  
+      var Emp_ID = req.body.Emp_ID
+      var sql22 = `SELECT Emp_ID = ${Emp_ID} FROM Employee WHERE Emp_Mail =  "${Emp_Mail}"`
       var sql2 = `UPDATE Employee SET token = "${token}" WHERE Emp_Mail = "${Emp_Mail}" AND pwd = "${pwd}"`
-      db.query(sql2, function(err, result){
+      console.log(pwd.length)
+      console.log(sql22)
+      console.log(Emp_ID)
+
+      conn.query(sql2, sql22, function(err, result,field){
         if (err) {
           res.json({ 
             message:err
@@ -109,7 +128,10 @@ app.put('/login',function(req, res, next){
         }else{
           res.json({ 
             message:'ok',
-            user_token:token
+            user_token:token,
+            user_id:Emp_ID
+            
+
           });
         }
       })
@@ -125,7 +147,7 @@ app.put('/login',function(req, res, next){
 
 
 app.post('/employee', function(req, res, next) {
-var Emp_ID = req.body.Emp_ID // 
+// 
 var token = genToken()
 var pwd = hashPassword(req.body.pwd)
 var Emp_sick = req.body.Emp_sick

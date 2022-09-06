@@ -4,9 +4,11 @@ var conn = mysql.createConnection({
   user: 'root',      
   password: 'root',      
   database: 'chackup' 
+  
 }); 
+
  
-conn.connect(function(err) {
+conn.connect(function(err, result, field) {
   if (err) throw err;
   console.log('Database is connected successfully !');
 });
