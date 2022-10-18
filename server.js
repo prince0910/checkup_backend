@@ -6,12 +6,13 @@ var logger = require('morgan');
 var bodyParser = require('body-parser');
 var flash = require('express-flash');
 var session = require('express-session');
-var db=require('./config');
+var db = require('./config');
 var app = express();
 var cors = require('cors');
-const crypto = require("crypto");
-const { token } = require('morgan');
+var crypto = require("crypto");
+var { token } = require('morgan');
 const conn = require('./config');
+// const multer = require('multer')
 
 
 //////////
@@ -28,7 +29,6 @@ app.use(session({
     cookie: { maxAge: 60000 }
 }))
 app.use(flash());
-
 
 /////////test
 app.use(function(req, res, next) {
@@ -53,18 +53,29 @@ app.get('/',function(req,res,next){
 app.get('/employee',function(req,res,next){
   var sql = `SELECT * FROM Employee`
   db.query(sql, function(err, result){
-    if (err) throw err;
-    var json = JSON.stringify(result)
-    res.end(json);
-    
+    if (err){
+      throw err;
+    }else{
+      var json = JSON.stringify(result)
+      res.end(json)
+
+    }
+ 
   })
 });
+
 ////////// function
 function hashPassword(password){
-  const salt = "some salt2";
-  const sha256Hasher = crypto.createHmac("sha256", salt);
-  const hash = sha256Hasher.update(password).digest("hex");
-  return hash
+  try {
+    const salt = "some salt2";
+    const sha256Hasher = crypto.createHmac("sha256", salt);
+    const hash = sha256Hasher.update(password).digest("hex");
+    return hash
+  } catch (error) {
+    console.log('password----------->',password)
+    console.log(error)
+  }
+  
 }
 
 function genToken(){
@@ -75,34 +86,41 @@ function genToken(){
 
 
 
-app.get('/checkauthen', function(req, res, next){
+app.post('/checkauthen', function(req, res, next){
  var token = req.body.token
- var Emp_ID = req.body.Emp_ID
- var sql = `SELECT Emp_ID FROM Employee WHERE Emp_ID = ${Emp_ID} AND token =  "${token}" `
+ var path =req.body.path
+ console.log('path',path)
+ var sql = `SELECT * FROM Employee 
+ INNER JOIN PagePrivilege ON Employee.Role = PagePrivilege.Role
+ WHERE Employee.token = "${token}"
+ AND PagePrivilege.path = "${path}"`
+ console.log(sql)
  db.query(sql, function(err, result){
-    if (err) throw err;
+    if (err){
+      console.log('Errorrrrrrr')
+      throw err;
+    }
     row_number = result.length
+    console.log('goooooooooooood')
     if(row_number == 1){
       res.json({ 
-        message:'ok',
+        isLogin:true,
       });
     }else{
+      console.log('baddddddddddddddd')
       res.json({ 
-        message:'invalid token !',
+        isLogin:false,
       });
     }
   })
 });
 
 
-
-///////////// login
-app.put('/login',function(req, res, next){
+app.post('/checklogin', function(req, res, next){
   var Emp_Mail = req.body.Emp_Mail
   var pwd =  hashPassword(req.body.pwd)
-  
   var sql = `SELECT Emp_Mail, pwd  FROM Employee 
-   where Emp_Mail= "${Emp_Mail}" AND pwd= "${pwd}"`
+   where Emp_Mail= "${Emp_Mail}" AND pwd= "${pwd}" AND Role = "Admin"`
   console.log(sql)
   
   var row_number = 0
@@ -111,29 +129,16 @@ app.put('/login',function(req, res, next){
     json = JSON.stringify(result)
     row_number = result.length   
     //console.log()
-    if(row_number == 1){
-      var token = genToken()  
-      var Emp_ID = req.body.Emp_ID
-      var sql22 = `SELECT Emp_ID = ${Emp_ID} FROM Employee WHERE Emp_Mail =  "${Emp_Mail}"`
-      var sql2 = `UPDATE Employee SET token = "${token}" WHERE Emp_Mail = "${Emp_Mail}" AND pwd = "${pwd}"`
-      console.log(pwd.length)
-      console.log(sql22)
-      console.log(Emp_ID)
-
-      conn.query(sql2, sql22, function(err, result,field){
-        if (err) {
-          res.json({ 
-            message:err
-          });
-        }else{
-          res.json({ 
-            message:'ok',
-            user_token:token,
-            user_id:Emp_ID
-            
-
-          });
-        }
+    
+    if(row_number === 1){
+      var token = genToken() 
+      let sql2 = `UPDATE Employee set token = "${token}" where Emp_Mail= "${req.body.Emp_Mail}"`
+      db.query(sql2, function(err, result, field){
+        if (err) throw err;
+        res.json({ 
+          message:'ok',
+          token:token
+        });
       })
     }else{
       res.json({ 
@@ -141,19 +146,20 @@ app.put('/login',function(req, res, next){
       });
     }
   })
+})
+///////////// login
 
 
-});
 
+app.post('/employee', function (req, res, next) {
 
-app.post('/employee', function(req, res, next) {
-// 
 var token = genToken()
 var pwd = hashPassword(req.body.pwd)
 var Emp_sick = req.body.Emp_sick
 var Emp_Sex = req.body.Emp_Sex
 var Emp_Scanpic = req.body.Emp_Scanpic
 var Emp_religion = req.body.Emp_religion
+var Emp_race = req.body.Emp_race
 var Emp_Pic = req.body.Emp_Pic
 var Emp_Phone = req.body.Emp_Phone
 var Emp_nationality = req.body.Emp_nationality
@@ -163,12 +169,12 @@ var Emp_IssueDate = req.body.Emp_IssueDate
 var Emp_Identity_ID = req.body.Emp_Identity_ID
 var Emp_bloodtype = req.body.Emp_bloodtype
 var Emp_Birthday = req.body.Emp_Birthday
-var Emp_Age = req.body.Emp_Age
 var Emp_Addressnow = req.body.Emp_Addressnow
 var Emp_Address = req.body.Emp_Address
+var Role = req.body.Role
+var Emp_ID =req.body.Emp_ID
 
-// hash password
-//pwd =0
+
  // คำสั่ง sql ในการยัดข้อมูลลง database
   var sql = `INSERT INTO Employee (
     token,
@@ -177,41 +183,45 @@ var Emp_Address = req.body.Emp_Address
     Emp_Sex, 
     Emp_Scanpic, 
     Emp_religion, 
+    Emp_race, 
     Emp_Pic,
     Emp_Phone,
     Emp_nationality, 
     Emp_Name, 
     Emp_Mail, 
-    Emp_IssueDate, 
     Emp_Identity_ID, 
     Emp_bloodtype, 
     Emp_Birthday,
-    Emp_Age, 
     Emp_Addressnow, 
-    Emp_Address) VALUES (
+    Emp_Address,
+    Role,
+    Emp_ID) VALUES (
     "${token}",
     "${pwd}", 
     "${Emp_sick}", 
     "${Emp_Sex}", 
     "${Emp_Scanpic}", 
     "${Emp_religion}", 
-    "${Emp_Pic}",
+    "${Emp_race}", 
+    "/path",
     "${Emp_Phone}",
     "${Emp_nationality}", 
     "${Emp_Name}", 
-    "${Emp_Mail}", 
-    "${Emp_IssueDate}", 
+    "${Emp_Mail}",   
     "${Emp_Identity_ID}", 
     "${Emp_bloodtype}", 
-    "${Emp_Birthday}",
-    "${Emp_Age}", 
+    "${Emp_Birthday}", 
     "${Emp_Addressnow}", 
-    "${Emp_Address}" 
-  )`;
+    "${Emp_Address}",
+    "${Role}",
+    "${Emp_ID}"  
+    )`;
       
       console.log('sql',sql);
+      
   // excute คำสั่ง
   db.query(sql, function(err, result) {
+    if (err) throw err;
     if (err) {
       res.json({ 
         message:err
@@ -219,6 +229,7 @@ var Emp_Address = req.body.Emp_Address
     }else{
       res.json({ 
         message:'ok'
+        
       });
     }
     // response jason ไปยังหน้าบ้าน
@@ -234,6 +245,7 @@ app.put('/employee', function(req, res, next) {
   var Emp_Sex = req.body.Emp_Sex
   var Emp_Scanpic = req.body.Emp_Scanpic
   var Emp_religion = req.body.Emp_religion
+  var Emp_race = req.body.Emp_race
   var Emp_Pic = req.body.Emp_Pic
   var Emp_Phone = req.body.Emp_Phone
   var Emp_nationality = req.body.Emp_nationality
@@ -243,7 +255,6 @@ app.put('/employee', function(req, res, next) {
   var Emp_Identity_ID = req.body.Emp_Identity_ID
   var Emp_bloodtype = req.body.Emp_bloodtype
   var Emp_Birthday = req.body.Emp_Birthday
-  var Emp_Age = req.body.Emp_Age
   var Emp_Addressnow = req.body.Emp_Addressnow
   var Emp_Address = req.body.Emp_Address
 
@@ -254,16 +265,16 @@ app.put('/employee', function(req, res, next) {
   Emp_Sex = "${Emp_Sex}", 
   Emp_Scanpic = "${Emp_Scanpic}", 
   Emp_religion = "${Emp_religion}", 
+  Emp_race = "${Emp_race}", 
   Emp_Pic = "${Emp_Pic}",
   Emp_Phone = "${Emp_Phone}",
-  Emp_nationality = "${Emp_nationality}", 
+  Emp_nationality = "${Emp_nationality}",
   Emp_Name = "${Emp_Name}", 
   Emp_Mail = "${Emp_Mail}", 
   Emp_IssueDate = "${Emp_IssueDate}", 
   Emp_Identity_ID = "${Emp_Identity_ID}", 
   Emp_bloodtype = "${Emp_bloodtype}", 
   Emp_Birthday = "${Emp_Birthday}",
-  Emp_Age = "${Emp_Age}", 
   Emp_Addressnow = "${Emp_Addressnow}", 
   Emp_Address = "${Emp_Address}"
   WHERE Emp_ID = "${Emp_ID}"; `
@@ -385,9 +396,37 @@ app.delete('/employeeInOut', function(req, res,next) {
     });
   });
 });
+function checkPagePrivilege(token){
+    var sql = `SELECT * 
+    FROM Employee 
+    INNER JOIN PagePrivilege ON Employee.Role = PagePrivilege.Role
+    WHERE Employee.token = "${token}"
+    AND PagePrivilege.Page_name = "${Page_name}"`
+    db.query(sql, function(err, result) {
+      if (err) {
+        return false
+      }else{
+        return true
+      }
+    })
+
+    return false
+  }
+  
+
 
 /////////////// Department
 app.get('/department',function(req,res,next){
+  const page_name = "department"
+  
+  if(!checkPagePrivilege(token)){
+    // กรณีไม่มีสิทเข้าถึง
+    res.json({ 
+      message:'คุณไม่มีสิทเข้าถึงข้อมูลนี้ กรุณาติดต่อ admin'
+    });
+    
+  }
+
   var sql = `SELECT * FROM Department`
   db.query(sql, function(err, result){
     if (err) throw err;
@@ -457,7 +496,6 @@ app.put('/department', function(req, res, next) {
 ///
 app.delete('/department', function(req, res,next) {
   var dep_ID = req.body.dep_ID 
-
   // คำสั่ง sqlในการลบข้อมูลในdatabase////////////////////////////
   var sql = `DELETE FROM Department 
   WHERE dep_ID = "${dep_ID}"`
@@ -471,56 +509,53 @@ app.delete('/department', function(req, res,next) {
     });
   });
 });
-
+/////**** *เพิ่มลิ้งอนุมัติอัปเดท
 /////////////// Leaves
 app.get('/leaves',function(req,res,next){
-  var sql = `SELECT * FROM Leaves`
+  var Leave_Inform = req.body.Leave_Inform
+  var Leave_day = req.body.Leave_day
+  var Leave_dayend = req.body.Leave_dayend
+  var Leave_type = req.body.Leave_type
+  var Emp_ID = req.body.Emp_ID
+  var Emp_Name =req.body.Emp_Name
+  var sql = `SELECT Leaves.Leave_Inform, Leaves.Leave_day , Leaves.Leave_dayend , Employee.Emp_Name, Leaves.Leave_type   
+  FROM Leaves, Employee 
+  WHERE Leaves.Emp_ID = Employee.Emp_ID
+  `
+  console.log(sql)
   db.query(sql, function(err, result){
     if (err) throw err;
+    
     var json = JSON.stringify(result)
     res.end(json);
   })
 });
 ///
 app.post('/leaves', function(req, res, next) {
-  var Leave_Num = req.body.Leave_Num 
   var Leave_Inform = req.body.Leave_Inform
   var Leave_day = req.body.Leave_day
   var Leave_dayend = req.body.Leave_dayend
   var Leave_type = req.body.Leave_type
   var Leave_timetype = req.body.Leave_timetype
-  var Leave_Send = req.body.Leave_Send
-  var Approve_Date = req.body.Approve_Date
-  var Leave_Status = req.body.Leave_Status
-  var Leave_approve = req.body.Leave_approve
   var Emp_ID = req.body.Emp_ID
  
    // คำสั่ง sql ในการยัดข้อมูลลง database
     var sql = `INSERT INTO Leaves (
-      Leave_Num,
       Leave_Inform,
       Leave_day,
       Leave_dayend,
       Leave_type,
-      Leave_timetype,
-      Leave_Send,
-      Approve_Date,
-      Leave_Status,
-      Leave_approve,
-      Emp_ID) VALUES (
-      "${Leave_Num}",
+      Leave_timetype 
+      ) VALUES (
       "${Leave_Inform}",
       "${Leave_day}",
       "${Leave_dayend}",
-      "${Leave_type}", 
-      "${Leave_timetype}",  
-      "${Leave_Send}", 
-      "${Approve_Date}",
-      "${Leave_Status}",
-      "${Leave_approve}", 
-      "${Emp_ID}"
+      "${Leave_type}",
+      "${Leave_type}"
+      
+      
     )`;
-    
+    console.log(sql)
   
     // excute คำสั่ง
     db.query(sql, function(err, result) {
@@ -596,163 +631,6 @@ app.delete('/leaves', function(req, res,next) {
   });
 })
 
-//////////////////// Page
-app.get('/page',function(req,res,next){
-  var sql = `SELECT * FROM Page`
-  db.query(sql, function(err, result){
-    if (err) throw err;
-    var json = JSON.stringify(result)
-    res.end(json);
-  })
-});
-////่่่่่
-app.post('/page', function(req, res, next) {
-  var Page_ID = req.body.Page_ID 
-  var Page_name = req.body.Page_name 
-   // คำสั่ง sql ในการยัดข้อมูลลง database
-    var sql = `INSERT INTO Page (
-      Page_ID,
-      Page_name) VALUES (
-      "${Page_ID}",
-      "${Page_name}"
-    )`;
-    // excute คำสั่ง
-    db.query(sql, function(err, result) {
-      if (err) {
-        res.json({ 
-          message:err
-        });
-      }else{
-        res.json({ 
-          message:'ok'
-        });
-      }
-      // response jason ไปยังหน้าบ้าน
-      
-    });
-});
-///
-app.put('/page', function(req, res, next) {
-  var Page_ID = req.body.Page_ID 
-  var Page_name = req.body.Page_name
-  /////////
-  var sql = `UPDATE Page 
-  SET Page_name = "${Page_name}"
-  WHERE Page_ID = "${Page_ID}"; `
-  console.log(sql)
-  // excute คำสั่ง
-  db.query(sql, function(err, result) {
-    if (err) {
-      res.json({ 
-        message:err
-      });
-    }else{
-      res.json({ 
-        message:'ok'
-      });
-    }
-    // response jason ไปยังหน้าบ้าน
-  });
-
-});
-///
-app.delete('/page', function(req, res,next) {
-  var Page_ID = req.body.Page_ID 
-
-  // คำสั่ง sqlในการลบข้อมูลในdatabase////////////////////////////
-  var sql = `DELETE FROM Page 
-  WHERE Page_ID = "${Page_ID}"`
-
-//
-  db.query(sql, function(err, result) {
-    if (err) throw err;
-    // response jason ไปยังหน้าบ้าน
-    res.json({ 
-      message:'ok'
-    });
-  });
-});
-
-//////////////////// Privilege
-app.get('/privilege',function(req,res,next){
-  var sql = `SELECT * FROM Privilege`
-  db.query(sql, function(err, result){
-    if (err) throw err;
-    var json = JSON.stringify(result)
-    res.end(json);
-  })
-});
-////
-app.post('/privilege', function(req, res, next) {
-  var Role_ID = req.body.Role_ID 
-  var Role_name = req.body.Role_name 
-  var Emp_ID = req.body.Emp_ID 
-   // คำสั่ง sql ในการยัดข้อมูลลง database
-    var sql = `INSERT INTO Privilege (
-      Role_ID,
-      Role_name,
-      Emp_ID) VALUES (
-      "${Role_ID}",
-      "${Role_name}",
-      "${Emp_ID}"
-    )`;
-    // excute คำสั่ง
-    db.query(sql, function(err, result) {
-      if (err) {
-        res.json({ 
-          message:err
-        });
-      }else{
-        res.json({ 
-          message:'ok'
-        });
-      }
-      // response jason ไปยังหน้าบ้าน
-      
-    });
-});
-app.put('/privilege', function(req, res, next) {
-  var Role_ID = req.body.Role_ID 
-  var Role_name = req.body.Role_name
-  var Emp_ID = req.body.Emp_ID
-  /////////
-  var sql = `UPDATE Privilege 
-  SET Role_name = "${Role_name}",
-  Emp_ID = "${Emp_ID}",
-  WHERE Role_ID = "${Role_ID}"; `
-  console.log(sql)
-  // excute คำสั่ง
-  db.query(sql, function(err, result) {
-    if (err) {
-      res.json({ 
-        message:err
-      });
-    }else{
-      res.json({ 
-        message:'ok'
-      });
-    }
-    // response jason ไปยังหน้าบ้าน
-  });
-
-});
-///
-app.delete('/privilege', function(req, res,next) {
-  var Role_ID = req.body.Role_ID 
-
-  // คำสั่ง sqlในการลบข้อมูลในdatabase////////////////////////////
-  var sql = `DELETE FROM Privilege 
-  WHERE Role_ID = "${Role_ID}"`
-
-//
-  db.query(sql, function(err, result) {
-    if (err) throw err;
-    // response jason ไปยังหน้าบ้าน
-    res.json({ 
-      message:'ok'
-    });
-  });
-});
 //////////////////// PagePrivilege
 app.get('/pageprivilege',function(req,res,next){
   var sql = `SELECT * FROM PagePrivilege`
@@ -765,16 +643,19 @@ app.get('/pageprivilege',function(req,res,next){
 //////
 app.post('/pageprivilege', function(req, res, next) {
   var PP_ID = req.body.PP_ID 
-  var Role_ID = req.body.Role_ID 
-  var Page_ID = req.body.Page_ID 
+  var Role = req.body.Role 
+  var path = req.body.path 
+  var page_name = req.body.page_name 
    // คำสั่ง sql ในการยัดข้อมูลลง database
     var sql = `INSERT INTO PagePrivilege (
       PP_ID,
-      Role_ID,
-      Page_ID) VALUES (
+      Role,
+      path
+      page_name) VALUES (
       "${PP_ID}",
-      "${Role_ID}",
-      "${Page_ID}"
+      "${Role}",
+      "${path}",
+      "${page_name}"
     )`;
     // excute คำสั่ง
     db.query(sql, function(err, result) {
@@ -794,12 +675,14 @@ app.post('/pageprivilege', function(req, res, next) {
 ////
 app.put('/pageprivilege', function(req, res, next) {
   var PP_ID = req.body.PP_ID 
-  var Role_ID = req.body.Role_ID
-  var Page_ID = req.body.Page_ID
+  var Role = req.body.Role 
+  var path = req.body.path 
+  var page_name = req.body.page_name 
   /////////
   var sql = `UPDATE PagePrivilege 
-  SET Role_ID = "${Role_ID}",
-  Page_ID = "${Page_ID}",
+  SET Role = "${Role}",
+  path = "${path}",
+  page_name = "${page_name}",
   WHERE PP_ID = "${PP_ID}"; `
   console.log(sql)
   // excute คำสั่ง

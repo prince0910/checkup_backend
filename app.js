@@ -1,24 +1,31 @@
-// get crypto module
-const crypto = require("crypto");
-
-// string to be hashed
-const password = "mypassword";
-
-// secret or salt to be hashed with
-const salt = "some salt2";
-
-// create a sha-256 hasher
-const sha256Hasher = crypto.createHmac("sha256", salt);
-
-// hash the string
-// and set the output format
-const hash = sha256Hasher.update(password).digest("hex");
+const express = require('express');
+const app = express();
+const multer = require('multer');
+const path = require('path');
+/////
+const storage = multer.diskStorage({
+     destination: './upload/images',
+     filename: (req, file, cb)=>{
+          return cb(null, `${file.filename}_${Date.now()}${path.extname(req.file.originalname)}`);
+     }
+})
 
 
-crypto.randomBytes(32, function(err, buffer) {
-     token = buffer.toString('hex');
-     console.log('token:',token); 
-});
+const upload = multer({
+     storage:storage
+})
+app.use('/profile', express.static('upload/imges'));
+app.post("/upload", upload.single('profile'), (req, res) => {
+     
+     res.json({
+          success:1,
+          profile_url: `http://localhost:4000/profile/$(req.file.filename)`
+     })
+ 
+})
 
 
-console.log('hash:',hash); 
+app.listen(4000, () => {
+     console.log("server ON")
+
+})
