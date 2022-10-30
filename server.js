@@ -12,6 +12,7 @@ var cors = require('cors');
 var crypto = require("crypto");
 var { token } = require('morgan');
 const conn = require('./config');
+const { query } = require('express');
 // const multer = require('multer')
 
 
@@ -84,8 +85,33 @@ function genToken(){
   return result
 }
 
+/////////////
+app.post('/qurry',function(req,res,next){
+  var Emp_Mail = req.body.Emp_Mail
+  var pwd = hashPassword(req.body.pwd)
+  var sql = `SELECT path FROM Employee 
+  INNER JOIN PagePrivilege ON Employee.Role = PagePrivilege.Role
+  WHERE Employee.Emp_Mail = "${Emp_Mail}"
+  AND Employee.pwd = "${pwd}"`
+
+  db.query(sql, function(err, result) {
+    if (err) {
+      res.json({ 
+        message:err
+      });
+    }else{
+      var json = JSON.stringify(result)
+      res.end(json);
+
+     
+    }
+    // response jason ไปยังหน้าบ้าน
+    
+  });
+});
 
 
+//////////////////
 app.post('/checkauthen', function(req, res, next){
  var token = req.body.token
  var path =req.body.path
