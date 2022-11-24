@@ -13,7 +13,7 @@ var crypto = require("crypto");
 var { token } = require('morgan');
 const conn = require('./config');
 const { query } = require('express');
-// const multer = require('multer')
+const multer = require('multer')
 
 
 //////////
@@ -22,7 +22,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, './public')));
 app.use(session({ 
     secret: '123456catr',
     resave: false,
@@ -41,18 +41,36 @@ app.use(function(req, res, next) {
 
 
 app.get('/',function(req,res,next){
-  var sql = `SELECT Emp_ID FROM Employee WHERE Emp_Mail LIKE '443drdgfx@hitmail.com' AND pwd = '5eda9dae99e2aa981ed22246d0c0e6a36768c2d01fb41ab16338e05636b7fafb'`
+  var sql = `SELECT Emp_ID FROM Employee WHERE Emp_Mail LIKE 'ryw2pooke@gmail.com' AND pwd = '06a7388986d8bcd990fd7352a637b7cd72f10ccca1e6f26ba7542b37153ba4d8'`
   console.log(sql)
   db.query(sql, function(err, result){
     if (err) throw err;
-    var json = JSON.stringify(result)
-    res.end(json);
+    // var json = JSON.stringify(result)
+    res.json;
     
   })
 });
 /////////////// Employee
 app.get('/employee',function(req,res,next){
   var sql = `SELECT * FROM Employee`
+  db.query(sql, function(err, result){
+    if (err){
+      throw err;
+    }else{
+      var json = JSON.stringify(result)
+      res.end(json)
+
+    }
+ 
+  })
+});
+//////
+app.get('/employee/:Emp_ID',function(req,res,next){
+  var Emp_ID = req.params.Emp_ID
+  //////////
+  var sql = `SELECT * FROM Employee
+  WHERE Emp_ID = "${Emp_ID}"
+  `;
   db.query(sql, function(err, result){
     if (err){
       throw err;
@@ -84,8 +102,31 @@ function genToken(){
   result = crypto.randomBytes(64).toString('hex');
   return result
 }
+function genpic(){
+  const storage = multer.diskStorage({
+    destination: './upload/images',
+    filename: (req, file, cb) => {
+        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+    }
+  })
 
-/////////////
+  const upload = multer({
+      storage: storage,
+      limits: {
+          fileSize: 10000000000
+      }
+  })
+
+}
+
+app.use('/profile', express.static('upload/images'));
+// app.post("/upload", upload.single('profile'), (req, res) => {
+//     res.json({
+//         success: 1,
+//         profile_url: `http://localhost:3000/profile/${req.file.filename}`
+//     })
+// })
+// /////////////
 app.post('/qurry',function(req,res,next){
   var Emp_Mail = req.body.Emp_Mail
   var pwd = hashPassword(req.body.pwd)
@@ -229,7 +270,7 @@ var Emp_ID =req.body.Emp_ID
     "${Emp_Scanpic}", 
     "${Emp_religion}", 
     "${Emp_race}", 
-    "/path",
+    "${Emp_Pic}",
     "${Emp_Phone}",
     "${Emp_nationality}", 
     "${Emp_Name}", 
@@ -264,46 +305,41 @@ var Emp_ID =req.body.Emp_ID
 });
 
 app.put('/employee', function(req, res, next) {
-  var Emp_ID = req.body.Emp_ID // genEmpID()
-  var token = req.body.token
-  var pwd = req.body.pwd
-  var Emp_sick = req.body.Emp_sick
-  var Emp_Sex = req.body.Emp_Sex
-  var Emp_Scanpic = req.body.Emp_Scanpic
-  var Emp_religion = req.body.Emp_religion
-  var Emp_race = req.body.Emp_race
-  var Emp_Pic = req.body.Emp_Pic
-  var Emp_Phone = req.body.Emp_Phone
-  var Emp_nationality = req.body.Emp_nationality
-  var Emp_Name = req.body.Emp_Name
-  var Emp_Mail = req.body.Emp_Mail
-  var Emp_IssueDate = req.body.Emp_IssueDate
-  var Emp_Identity_ID = req.body.Emp_Identity_ID
-  var Emp_bloodtype = req.body.Emp_bloodtype
-  var Emp_Birthday = req.body.Emp_Birthday
-  var Emp_Addressnow = req.body.Emp_Addressnow
-  var Emp_Address = req.body.Emp_Address
+  var Emp_ID = req.params.Emp_ID // genEmpID()
+  var pwd = req.params.pwd
+  var Emp_sick = req.params.Emp_sick
+  var Emp_Sex = req.params.Emp_Sex
+  var Emp_religion = req.params.Emp_religion
+  var Emp_race = req.params.Emp_race
+  var Emp_Phone = req.params.Emp_Phone
+  var Emp_nationality = req.params.Emp_nationality
+  var Emp_Name = req.params.Emp_Name
+  var Emp_Mail = req.params.Emp_Mail
+  var Emp_Identity_ID = req.params.Emp_Identity_ID
+  var Emp_bloodtype = req.params.Emp_bloodtype
+  var Emp_Birthday = req.params.Emp_Birthday
+  var Emp_Addressnow = req.params.Emp_Addressnow
+  var Emp_Address = req.params.Emp_Address
+  var Role = req.params.Role
 
   var sql = `UPDATE Employee
-  SET token = "${token}",
-  pwd = "${pwd}", 
+  SET pwd = "${pwd}", 
   Emp_sick = "${Emp_sick}", 
   Emp_Sex = "${Emp_Sex}", 
-  Emp_Scanpic = "${Emp_Scanpic}", 
   Emp_religion = "${Emp_religion}", 
   Emp_race = "${Emp_race}", 
-  Emp_Pic = "${Emp_Pic}",
   Emp_Phone = "${Emp_Phone}",
   Emp_nationality = "${Emp_nationality}",
   Emp_Name = "${Emp_Name}", 
   Emp_Mail = "${Emp_Mail}", 
-  Emp_IssueDate = "${Emp_IssueDate}", 
   Emp_Identity_ID = "${Emp_Identity_ID}", 
   Emp_bloodtype = "${Emp_bloodtype}", 
   Emp_Birthday = "${Emp_Birthday}",
   Emp_Addressnow = "${Emp_Addressnow}", 
-  Emp_Address = "${Emp_Address}"
-  WHERE Emp_ID = "${Emp_ID}"; `
+  Emp_Address = "${Emp_Address}",
+  Role = "${Role}"
+  WHERE Emp_ID = "${Emp_ID}" 
+  `;
   console.log(sql)
   db.query(sql, function(err, result) {
     if (err) {
@@ -320,14 +356,14 @@ app.put('/employee', function(req, res, next) {
 
 });
 
-app.delete('/employee', function(req, res,next) {
-  var Emp_ID = req.body.Emp_ID
+
+app.delete('/employee/:Emp_ID', function(req, res, next) {
+  var Emp_ID = req.params.Emp_ID
 
   // คำสั่ง sql ในการลบข้อมูลใน database////////////////////////////
   var sql = `DELETE FROM Employee 
-  WHERE Emp_ID = "${Emp_ID}"`
-
-
+  WHERE Emp_ID = "${Emp_ID}"
+  `;
 
   db.query(sql, function(err, result) {
     if (err) throw err;
@@ -422,6 +458,7 @@ app.delete('/employeeInOut', function(req, res,next) {
     });
   });
 });
+//////////////////////
 function checkPagePrivilege(token){
     var sql = `SELECT * 
     FROM Employee 
@@ -563,6 +600,7 @@ app.post('/leaves', function(req, res, next) {
   var Leave_dayend = req.body.Leave_dayend
   var Leave_type = req.body.Leave_type
   var Leave_timetype = req.body.Leave_timetype
+  var Name_leave = req.body.Name_leave
   var Emp_ID = req.body.Emp_ID
  
    // คำสั่ง sql ในการยัดข้อมูลลง database
@@ -571,13 +609,17 @@ app.post('/leaves', function(req, res, next) {
       Leave_day,
       Leave_dayend,
       Leave_type,
-      Leave_timetype 
+      Leave_timetype,
+      Name_leave,
+      Emp_ID 
       ) VALUES (
       "${Leave_Inform}",
       "${Leave_day}",
       "${Leave_dayend}",
       "${Leave_type}",
-      "${Leave_type}"
+      "${Leave_timetype}",
+      "${Name_leave}",
+      "${Emp_ID}"
       
       
     )`;
